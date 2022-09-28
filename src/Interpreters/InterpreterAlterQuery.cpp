@@ -340,6 +340,12 @@ AccessRightsElements InterpreterAlterQuery::getRequiredAccessForCommand(const AS
             required_access.emplace_back(AccessType::ALTER_MATERIALIZE_PROJECTION, database, table);
             break;
         }
+        case ASTAlterCommand::ADD_SECONDARY_PROJECTION:
+        {
+            std::cout << __FILE__ << ":" << __LINE__ << "\n";
+            // required_access.emplace_back(AccessType::ALTER_MATERIALIZE_PROJECTION, database, table);
+            break;
+        }
         case ASTAlterCommand::MODIFY_TTL:
         case ASTAlterCommand::REMOVE_TTL:
         {

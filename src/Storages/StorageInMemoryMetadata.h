@@ -28,6 +28,9 @@ struct StorageInMemoryMetadata
     ConstraintsDescription constraints;
     /// Table projections. Currently supported for MergeTree only.
     ProjectionsDescription projections;
+
+    // Todo(liuyu) SecondaryProjectionDesc second;
+    // need to add a batch of classes  for this
     /// Table minmax_count projection. Currently supported for MergeTree only.
     std::optional<ProjectionDescription> minmax_count_projection;
     /// PARTITION BY expression. Currently supported for MergeTree only.

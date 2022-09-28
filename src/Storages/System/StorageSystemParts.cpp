@@ -275,8 +275,11 @@ void StorageSystemParts::processNextStorage(
         add_ttl_info_map(part->ttl_infos.rows_where_ttl);
 
         Array projections;
-        for (const auto & [name, _] : part->getProjectionParts())
+        for (const auto & [name, _] : part->getProjectionParts()) {
             projections.push_back(name);
+            // std::cout << __FILE__ << ":" << __LINE__ << "name = " << name << "\n" << boost::stacktrace::stacktrace() << std::endl;
+        }
+            
 
         if (columns_mask[src_index++])
             columns[res_index++]->insert(projections);

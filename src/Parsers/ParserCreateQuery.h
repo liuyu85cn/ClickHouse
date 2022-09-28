@@ -371,9 +371,13 @@ protected:
 
 class ParserProjectionDeclaration : public IParserBase
 {
+    bool isSecondaryProjection = false;
 protected:
     const char * getName() const override { return "projection declaration"; }
     bool parseImpl(Pos & pos, ASTPtr & node, Expected & expected) override;
+
+public:
+    void setSecondaryProjection(bool b) { isSecondaryProjection = b; }
 };
 
 class ParserTablePropertyDeclaration : public IParserBase

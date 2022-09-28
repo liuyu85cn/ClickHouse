@@ -1,0 +1,2 @@
+ATTACH DATABASE _ UUID '8f01c3da-a4a9-4e23-99a0-5b3ac777c80f'
+ENGINE = Atomic

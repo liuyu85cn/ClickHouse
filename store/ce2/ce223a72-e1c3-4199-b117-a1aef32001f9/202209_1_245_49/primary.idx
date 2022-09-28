@@ -1,0 +1,5 @@
+'AsynchronousMetricsCalculationTimeSpent'KªcDiskUsed_default'K¡ cFilesystemLogsPathUsedBytes'KØ
+cFilesystemMainPathTotalINodes'KS	cJitter'K˜cKeeperIsFollower'KŒ"cKeeperLatestSnapshotSize'K° cKeeperSessionWithWatches'Kè
+c
+KeeperZxid'K3	cMySQLThreads'K◊cReplicasMaxAbsoluteDelay'KÆ"cReplicasSumInsertsInQueue'KÅ cTotalPartsOfMergeTreeTables'Ko
+cjemalloc.active'K	cjemalloc.arenas.all.pdirty'K∑c(jemalloc.background_thread.run_intervals'KÖ"cjemalloc.resident'Ka cjemalloc.retained'KÓ"c

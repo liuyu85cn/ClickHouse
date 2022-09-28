@@ -38,6 +38,7 @@ struct AlterCommand
         DROP_CONSTRAINT,
         ADD_PROJECTION,
         DROP_PROJECTION,
+        ADD_SECONDARY_PROJECTION,
         MODIFY_TTL,
         MODIFY_SETTING,
         RESET_SETTING,

@@ -155,6 +155,9 @@ private:
 
     ASTSelectQuery & getSelectQuery() { return query_ptr->as<ASTSelectQuery &>(); }
 
+    int secondaryIndexRewrite(ASTPtr& query_ptr);
+    bool needSecondaryIndexRewrite(const ASTPtr& query_ptr);
+
     void addPrewhereAliasActions();
     bool shouldMoveToPrewhere();
 

@@ -89,6 +89,8 @@
 #include <unordered_set>
 #include <filesystem>
 
+#include <boost/stacktrace.hpp>
+
 
 namespace fs = std::filesystem;
 
@@ -5478,6 +5480,7 @@ Block MergeTreeData::getMinMaxCountProjectionBlock(
 std::optional<ProjectionCandidate> MergeTreeData::getQueryProcessingStageWithAggregateProjection(
     ContextPtr query_context, const StorageSnapshotPtr & storage_snapshot, SelectQueryInfo & query_info) const
 {
+    std::stringstream oss;
     const auto & metadata_snapshot = storage_snapshot->metadata;
     const auto & settings = query_context->getSettingsRef();
     if (!settings.allow_experimental_projection_optimization || query_info.ignore_projections || query_info.is_projection_query)
@@ -5628,6 +5631,19 @@ std::optional<ProjectionCandidate> MergeTreeData::getQueryProcessingStageWithAgg
             required_columns.insert(prewhere_required_columns.begin(), prewhere_required_columns.end());
         }
 
+        std::cout << "required_columns: ";
+        for (auto& col : required_columns) {
+            std::cout << col <<", ";
+        }
+        std::cout << std::endl;
+
+        auto names = source_block.getNames();
+        std::cout << "source_block: ";
+        for (auto& name : names) {
+            std::cout << name <<", ";
+        }
+        std::cout << std::endl;
+
         bool match = true;
         for (const auto & column : required_columns)
         {
@@ -5719,6 +5735,9 @@ std::optional<ProjectionCandidate> MergeTreeData::getQueryProcessingStageWithAgg
                 for (const auto & aggregate : aggregates)
                     candidate.required_columns.push_back(aggregate.name);
                 candidates.push_back(std::move(candidate));
+            } else {
+                std::cout << "projection.type is Aggregate, rewrite_before_where return false, line: " << __LINE__ 
+                        << ", candidates.size() = " << candidates.size() << std::endl;
             }
         }
         else if (projection.type == ProjectionDescription::Type::Normal)
@@ -5734,15 +5753,24 @@ std::optional<ProjectionCandidate> MergeTreeData::getQueryProcessingStageWithAgg
                 for (const auto & column : actions->getRequiredColumns())
                     required_columns.insert(column.name);
 
+                // 如果 where 条件 与二级索引列一致
+                // 那么无论其他列的状况, 都会返回 true
+
                 if (rewrite_before_where(candidate, projection, required_columns, sample_block, {}))
                 {
                     candidate.required_columns = {required_columns.begin(), required_columns.end()};
                     candidates.push_back(std::move(candidate));
+                } else {
+                    std::cout << "projection.type is Normal, rewrite_before_where return false, line: " << __LINE__
+                        << ", candidates.size() = " << candidates.size() 
+                        << ", analysis_result.before_aggregation = " << std::boolalpha << analysis_result.before_aggregation
+                        << std::endl;
                 }
             }
         }
     };
 
+    // std::cout << __FILE__ << ":" << __LINE__ << " getQueryProcessingStageWithAggregateProjection() \n";
     ProjectionCandidate * selected_candidate = nullptr;
     size_t min_sum_marks = std::numeric_limits<size_t>::max();
     if (metadata_snapshot->minmax_count_projection && !has_lightweight_delete_parts.load(std::memory_order_relaxed)) /// Disable ReadFromStorage for parts with lightweight.
@@ -5827,13 +5855,20 @@ std::optional<ProjectionCandidate> MergeTreeData::getQueryProcessingStageWithAgg
     };
 
     // If minmax_count_projection is a valid candidate, prepare it and check its completeness.
-    if (minmax_count_projection_candidate)
+    if (minmax_count_projection_candidate) {
         prepare_min_max_count_projection();
+    }
 
     // We cannot find a complete match of minmax_count_projection, add more projections to check.
-    if (!selected_candidate || !selected_candidate->complete)
-        for (const auto & projection : metadata_snapshot->projections)
+    if (!selected_candidate || !selected_candidate->complete) {
+        for (const auto & projection : metadata_snapshot->projections) {
+            bool is_secondary_projection = (projection.type == ProjectionDescription::Type::Secondary);
+            std::cout << fmt::format("{}:{}, MergeTreeData::{}, name = {}, is_secondary_projection = {}, projection.is_secondary_projection = {} \n",
+                __FILE__, __LINE__, __func__, projection.name, is_secondary_projection, projection.is_secondary_projection);
             add_projection_candidate(projection);
+        }
+    }
+        
 
     // Let's select the best projection to execute the query.
     if (!candidates.empty())
@@ -5904,14 +5939,17 @@ std::optional<ProjectionCandidate> MergeTreeData::getQueryProcessingStageWithAgg
         }
     }
 
-    if (!selected_candidate)
+    // std::cout << "messi file: " << __FILE__ << ", line: " << __LINE__ << "\n";
+    if (!selected_candidate) {
+        // std::cout << "messi file: " << __FILE__ << ", line: " << __LINE__ << "\n";
         return std::nullopt;
-    else if (min_sum_marks == 0)
+    } else if (min_sum_marks == 0)
     {
         /// If selected_projection indicated an empty result set. Remember it in query_info but
         /// don't use projection to run the query, because projection pipeline with empty result
         /// set will not work correctly with empty_result_for_aggregation_by_empty_set.
         query_info.merge_tree_empty_result = true;
+        // std::cout << "messi file: " << __FILE__ << ", line: " << __LINE__ << "\n";
         return std::nullopt;
     }
 
@@ -5923,6 +5961,7 @@ std::optional<ProjectionCandidate> MergeTreeData::getQueryProcessingStageWithAgg
 
     /// Just in case, reset prewhere info calculated from projection.
     query_info.prewhere_info.reset();
+    std::cout << "messi file: " << __FILE__ << ", line: " << __LINE__ << "\n";
     return *selected_candidate;
 }
 

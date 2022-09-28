@@ -53,6 +53,8 @@ bool ParserAlterCommand::parseImpl(Pos & pos, ASTPtr & node, Expected & expected
     ParserKeyword s_materialize_projection("MATERIALIZE PROJECTION");
     ParserKeyword s_modify_comment("MODIFY COMMENT");
 
+    ParserKeyword s_add_secondary_index("ADD SIDX");
+
     ParserKeyword s_add("ADD");
     ParserKeyword s_drop("DROP");
     ParserKeyword s_suspend("SUSPEND");
@@ -344,6 +346,27 @@ bool ParserAlterCommand::parseImpl(Pos & pos, ASTPtr & node, Expected & expected
                 }
 
                 command->type = ASTAlterCommand::ADD_PROJECTION;
+            }
+            else if (s_add_secondary_index.ignore(pos, expected))
+            {
+                // std::cout << fmt::format("messi {}:{}, {}\n", __FILE__, __LINE__, __func__);
+                if (s_if_not_exists.ignore(pos, expected))
+                    command->if_not_exists = true;
+
+                parser_projection_decl.setSecondaryProjection(true);
+
+                if (!parser_projection_decl.parse(pos, command->projection_decl, expected))
+                    return false;
+
+                if (s_first.ignore(pos, expected))
+                    command->first = true;
+                else if (s_after.ignore(pos, expected))
+                {
+                    if (!parser_name.parse(pos, command->projection, expected))
+                        return false;
+                }
+
+                command->type = ASTAlterCommand::ADD_SECONDARY_PROJECTION;
             }
             else if (s_drop_projection.ignore(pos, expected))
             {

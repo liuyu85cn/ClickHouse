@@ -10,6 +10,10 @@
 
 namespace DB
 {
+void ParserProjectionSelectQuery::setSecondaryProjection(bool flag) {
+    isSecondaryProjection = flag;
+}
+
 bool ParserProjectionSelectQuery::parseImpl(Pos & pos, ASTPtr & node, Expected & expected)
 {
     auto select_query = std::make_shared<ASTProjectionSelectQuery>();

@@ -12,12 +12,17 @@ class ASTProjectionDeclaration : public IAST
 public:
     String name;
     IAST * query;
+    bool isSecondaryProjection = false;
 
     /** Get the text that identifies this element. */
     String getID(char) const override { return "Projection"; }
 
     ASTPtr clone() const override;
     void formatImpl(const FormatSettings & s, FormatState & state, FormatStateStacked frame) const override;
+
+    void setSecondaryProjection(bool b) { isSecondaryProjection = b; }
+
+    bool getSecondaryProjection() const { return isSecondaryProjection; }
 };
 
 }

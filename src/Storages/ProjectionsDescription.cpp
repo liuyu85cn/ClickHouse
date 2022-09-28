@@ -21,6 +21,8 @@
 #include <Processors/QueryPlan/QueryPlan.h>
 #include <base/range.h>
 
+#include <boost/stacktrace.hpp>
+
 
 namespace DB
 {
@@ -65,6 +67,7 @@ ProjectionDescription ProjectionDescription::clone() const
     other.metadata = metadata;
     other.key_size = key_size;
     other.is_minmax_count_projection = is_minmax_count_projection;
+    other.is_secondary_projection = is_secondary_projection;
     other.primary_key_max_column_name = primary_key_max_column_name;
     other.partition_value_indices = partition_value_indices;
 
@@ -102,6 +105,18 @@ ProjectionDescription::getProjectionFromAST(const ASTPtr & definition_ast, const
     ProjectionDescription result;
     result.definition_ast = projection_definition->clone();
     result.name = projection_definition->name;
+
+    result.is_secondary_projection = projection_definition->getSecondaryProjection();
+    result.type = ProjectionDescription::Type::Secondary;
+
+    // static std::mutex muPrint;
+    // {
+    //     std::lock_guard lk(muPrint);
+    //     std::cout << fmt::format("\n{}:{}, ProjectionDescription::{}, name = {}, is_secondary_projection = {}\n", 
+    //         __FILE__, __LINE__, __func__, result.name, result.is_secondary_projection)
+    //         << boost::stacktrace::stacktrace()
+    //         << "\n";
+    // } 
 
     auto query = projection_definition->query->as<ASTProjectionSelectQuery &>();
     result.query_ast = query.cloneToASTSelect();

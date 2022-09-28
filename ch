@@ -1,0 +1,1 @@
+/Users/liuyu/code/ClickHouse/build/programs/clickhouse

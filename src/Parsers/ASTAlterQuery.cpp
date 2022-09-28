@@ -107,6 +107,7 @@ const char * ASTAlterCommand::typeToString(ASTAlterCommand::Type type)
         case ADD_PROJECTION: return "ADD_PROJECTION";
         case DROP_PROJECTION: return "DROP_PROJECTION";
         case MATERIALIZE_PROJECTION: return "MATERIALIZE_PROJECTION";
+        case ADD_SECONDARY_PROJECTION: return "ADD_SECONDARY_PROJECTION";
         case DROP_PARTITION: return "DROP_PARTITION";
         case DROP_DETACHED_PARTITION: return "DROP_DETACHED_PARTITION";
         case ATTACH_PARTITION: return "ATTACH_PARTITION";
@@ -261,6 +262,20 @@ void ASTAlterCommand::formatImpl(const FormatSettings & settings, FormatState & 
         constraint->formatImpl(settings, state, frame);
     }
     else if (type == ASTAlterCommand::ADD_PROJECTION)
+    {
+        settings.ostr << (settings.hilite ? hilite_keyword : "") << "ADD PROJECTION " << (if_not_exists ? "IF NOT EXISTS " : "")
+                      << (settings.hilite ? hilite_none : "");
+        projection_decl->formatImpl(settings, state, frame);
+
+        if (first)
+            settings.ostr << (settings.hilite ? hilite_keyword : "") << " FIRST " << (settings.hilite ? hilite_none : "");
+        else if (projection)
+        {
+            settings.ostr << (settings.hilite ? hilite_keyword : "") << " AFTER " << (settings.hilite ? hilite_none : "");
+            projection->formatImpl(settings, state, frame);
+        }
+    }
+    else if (type == ASTAlterCommand::ADD_SECONDARY_PROJECTION)
     {
         settings.ostr << (settings.hilite ? hilite_keyword : "") << "ADD PROJECTION " << (if_not_exists ? "IF NOT EXISTS " : "")
                       << (settings.hilite ? hilite_none : "");

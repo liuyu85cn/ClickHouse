@@ -22,6 +22,10 @@
 #include <shared_mutex>
 #include <compare>
 
+#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+#include <boost/stacktrace.hpp>
+
+
 
 namespace DB
 {
@@ -199,6 +203,7 @@ public:
     /// any locks.
     void setInMemoryMetadata(const StorageInMemoryMetadata & metadata_)
     {
+        // std::cout << "setInMemoryMetadata(): \n" << boost::stacktrace::stacktrace() << "\n";
         metadata.set(std::make_unique<StorageInMemoryMetadata>(metadata_));
     }
 

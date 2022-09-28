@@ -11,6 +11,9 @@
 #include <IO/ReadHelpers.h>
 #include <IO/Operators.h>
 
+#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+#include <boost/stacktrace.hpp>
+
 
 namespace DB
 {
@@ -42,13 +45,16 @@ StorageInMemoryMetadata::StorageInMemoryMetadata(const StorageInMemoryMetadata &
     , select(other.select)
     , comment(other.comment)
 {
+    // std::cout << "messi line " << __LINE__ << "\n"
+    //     << boost::stacktrace::stacktrace() << std::endl;
+    // std::cout << " messi " << StackTrace().toString() << std::endl;
 }
 
 StorageInMemoryMetadata & StorageInMemoryMetadata::operator=(const StorageInMemoryMetadata & other)
 {
     if (&other == this)
         return *this;
-
+        
     columns = other.columns;
     secondary_indices = other.secondary_indices;
     constraints = other.constraints;
@@ -84,20 +90,21 @@ void StorageInMemoryMetadata::setColumns(ColumnsDescription columns_)
     columns = std::move(columns_);
 }
 
-void StorageInMemoryMetadata::setSecondaryIndices(IndicesDescription secondary_indices_)
-{
-    secondary_indices = std::move(secondary_indices_);
-}
+// void StorageInMemoryMetadata::setSecondaryIndices(IndicesDescription secondary_indices_)
+// {
+//     secondary_indices = std::move(secondary_indices_);
+// }
 
 void StorageInMemoryMetadata::setConstraints(ConstraintsDescription constraints_)
 {
     constraints = std::move(constraints_);
 }
 
-void StorageInMemoryMetadata::setProjections(ProjectionsDescription projections_)
-{
-    projections = std::move(projections_);
-}
+// void StorageInMemoryMetadata::setProjections(ProjectionsDescription projections_)
+// {
+//     std::cout << __FILE__ << ":" << __LINE__ << "\n" << boost::stacktrace::stacktrace() << std::endl;
+//     projections = std::move(projections_);
+// }
 
 void StorageInMemoryMetadata::setTableTTLs(const TTLTableDescription & table_ttl_)
 {

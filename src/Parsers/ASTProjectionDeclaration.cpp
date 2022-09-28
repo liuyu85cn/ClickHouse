@@ -9,8 +9,9 @@ ASTPtr ASTProjectionDeclaration::clone() const
 {
     auto res = std::make_shared<ASTProjectionDeclaration>();
     res->name = name;
+    res->isSecondaryProjection = isSecondaryProjection;
     if (query)
-        res->set(res->query, query->clone());
+        res->set(res->query, query->clone()); 
     return res;
 }
 

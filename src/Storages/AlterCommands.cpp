@@ -265,6 +265,26 @@ std::optional<AlterCommand> AlterCommand::parse(const ASTAlterCommand * command_
 
         return command;
     }
+    else if (command_ast->type == ASTAlterCommand::ADD_SECONDARY_PROJECTION)
+    {
+        std::cout << fmt::format("{}:{}, {}\n", __FILE__, __LINE__, __func__) << boost::stacktrace::stacktrace() << "\n";
+        AlterCommand command;
+        command.ast = command_ast->clone();
+        command.projection_decl = command_ast->projection_decl;
+        command.type = AlterCommand::ADD_PROJECTION;
+
+        const auto & ast_projection_decl = command_ast->projection_decl->as<ASTProjectionDeclaration &>();
+
+        command.projection_name = ast_projection_decl.name;
+
+        if (command_ast->projection)
+            command.after_projection_name = command_ast->projection->as<ASTIdentifier &>().name();
+
+        command.first = command_ast->first;
+        command.if_not_exists = command_ast->if_not_exists;
+
+        return command;
+    }
     else if (command_ast->type == ASTAlterCommand::DROP_CONSTRAINT)
     {
         AlterCommand command;
@@ -485,6 +505,10 @@ void AlterCommand::apply(StorageInMemoryMetadata & metadata, ContextPtr context)
     }
     else if (type == ADD_INDEX)
     {
+        // std::cout << "messi type == ADD_INDEX\n"
+        //         << ", index_name = " << index_name
+        //         << ", after_index_name = " << after_index_name
+        //         << std::endl;
         if (std::any_of(
                 metadata.secondary_indices.cbegin(),
                 metadata.secondary_indices.cend(),
@@ -913,6 +937,9 @@ void AlterCommands::apply(StorageInMemoryMetadata & metadata, ContextPtr context
         throw DB::Exception("Alter commands is not prepared. Cannot apply. It's a bug", ErrorCodes::LOGICAL_ERROR);
 
     auto metadata_copy = metadata;
+
+    // std::cout << fmt::format("{}:{}, AlterCommands::{}, &metadata_copy = {}}\n",
+    //     __FILE__, __LINE__, __func__, &metadata_copy);
 
     for (const AlterCommand & command : *this)
         if (!command.ignore)

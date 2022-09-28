@@ -255,6 +255,7 @@ DatabaseAndTable DatabaseCatalog::getTableImpl(
     ContextPtr context_,
     std::optional<Exception> * exception) const
 {
+    // std::cout << __FILE__ << ":" << __LINE__ << ", " << __func__ << "\n";
     if (!table_id)
     {
         if (exception)
@@ -264,6 +265,10 @@ DatabaseAndTable DatabaseCatalog::getTableImpl(
 
     if (table_id.hasUUID())
     {
+        // if (table_id.database_name == "liuyu") {
+        //     std::cout << __FILE__ << ":" << __LINE__ << ", " << __func__ << "() table_id.hasUUID() db="
+        //         << table_id.database_name << ", table=" << table_id.table_name << std::endl;
+        // }
         /// Shortcut for tables which have persistent UUID
         auto db_and_table = tryGetByUUID(table_id.uuid);
         if (!db_and_table.first || !db_and_table.second)
@@ -290,6 +295,10 @@ DatabaseAndTable DatabaseCatalog::getTableImpl(
             db_and_table.second = std::make_shared<StorageMaterializedMySQL>(std::move(db_and_table.second), db_and_table.first.get());
         }
 #endif
+        // if (table_id.database_name == "liuyu") {
+        //     std::cout << __FILE__ << ":" << __LINE__ << ", " << __func__ << "() return db_and_table; db="
+        //         << table_id.database_name << ", table=" << table_id.table_name << std::endl;
+        // }
         return db_and_table;
     }
 
@@ -397,6 +406,7 @@ void DatabaseCatalog::assertDatabaseDoesntExistUnlocked(const String & database_
 
 void DatabaseCatalog::attachDatabase(const String & database_name, const DatabasePtr & database)
 {
+    // std::cout << __FILE__ << ":" << __LINE__ << " attachDatabase() database_name: " << database_name << "\n";
     std::lock_guard lock{databases_mutex};
     assertDatabaseDoesntExistUnlocked(database_name);
     databases.emplace(database_name, database);
@@ -472,6 +482,9 @@ void DatabaseCatalog::updateDatabaseName(const String & old_name, const String &
     assert(it != databases.end());
     auto db = it->second;
     databases.erase(it);
+    // std::cout << __FILE__ << ":" << __LINE__ << 
+    //     " updateDatabaseName() old_name: " << old_name << ", new_name: " << new_name << "\n";
+
     databases.emplace(new_name, db);
 
     for (const auto & table_name : tables_in_database)

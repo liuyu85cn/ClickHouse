@@ -191,9 +191,11 @@ bool ParserProjectionDeclaration::parseImpl(Pos & pos, ASTPtr & node, Expected &
     if (!name_p.parse(pos, name, expected))
         return false;
 
+    // std::cout << fmt::format("messi before s_lparen {}:{}, {}\n", __FILE__, __LINE__, __func__);
     if (!s_lparen.ignore(pos, expected))
         return false;
 
+    // std::cout << fmt::format("messi after s_lparen {}:{}, {}\n", __FILE__, __LINE__, __func__);
     if (!query_p.parse(pos, query, expected))
         return false;
 
@@ -201,6 +203,9 @@ bool ParserProjectionDeclaration::parseImpl(Pos & pos, ASTPtr & node, Expected &
         return false;
 
     auto projection = std::make_shared<ASTProjectionDeclaration>();
+    if (isSecondaryProjection) {
+        projection->setSecondaryProjection(true);
+    }
     projection->name = name->as<ASTIdentifier &>().name();
     projection->set(projection->query, query);
     node = projection;

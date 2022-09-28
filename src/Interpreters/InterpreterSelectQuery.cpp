@@ -88,6 +88,8 @@
 #include <base/map.h>
 #include <Common/scope_guard_safe.h>
 
+#include <boost/stacktrace.hpp>
+
 
 namespace DB
 {
@@ -344,6 +346,35 @@ InterpreterSelectQuery::InterpreterSelectQuery(
         prepared_sets_)
 {}
 
+
+
+bool fakeNeedSecondaryIndexRewrite(const ASTPtr& query_ptr) {
+    if (query_ptr->children.size() != 3) {
+        return false;
+    }
+    auto& tier1 = query_ptr->children;
+    if (tier1.back()->getID() != "Function_equals") {
+        return false;
+    }
+    return true;
+}
+
+bool InterpreterSelectQuery::needSecondaryIndexRewrite(const ASTPtr& query_ptr_) {
+    /**
+     * @brief check if the execution tree like 
+     * 
+     */
+    return fakeNeedSecondaryIndexRewrite(query_ptr_);
+}
+
+
+int InterpreterSelectQuery::secondaryIndexRewrite(ASTPtr& query_ptr_) {
+    if (!needSecondaryIndexRewrite(query_ptr_)) {
+        return 0;
+    }
+    return 1;   
+}
+
 InterpreterSelectQuery::InterpreterSelectQuery(
     const ASTPtr & query_ptr_,
     const ContextMutablePtr & context_,
@@ -363,6 +394,40 @@ InterpreterSelectQuery::InterpreterSelectQuery(
 {
     checkStackSize();
 
+    static std::mutex muPrint;
+{
+    std::lock_guard lk(muPrint);
+    if (needSecondaryIndexRewrite(query_ptr_)) {
+        std::cout << "needSecondaryIndexRewrite return true \n";
+        WriteBufferFromOwnString dump_before_fuzz;
+        query_ptr_->dumpTree(dump_before_fuzz);
+        std::cout << "dumpTree:\n" << dump_before_fuzz.str() << "\n";
+
+        ASTs vec1;
+        vec1.push_back(query_ptr_);
+        int tier = 0;
+
+        while (!vec1.empty()) {
+            std::cout << " tier " << tier << ", size =  " << vec1.size() << ", ";
+            for (auto& it : vec1) {
+                std::cout << it->getID() << ", ";
+            }
+            ASTs vec2;
+            for (auto& it : vec1) {
+                for (auto& child : it->children) {
+                    vec2.push_back(child);
+                }
+            }
+            vec1 = vec2;
+            
+            ++tier;
+            std::cout << "\n";
+        }
+    }
+
+    // secondaryIndexRewrite(this->query_ptr);
+}
+    
     if (!prepared_sets)
         prepared_sets = std::make_shared<PreparedSets>();
 
@@ -694,8 +759,10 @@ InterpreterSelectQuery::InterpreterSelectQuery(
         analysis_result.required_columns = required_columns;
     }
 
-    if (query_info.projection)
+    if (query_info.projection) {
+        std::cout << "messi InterpreterSelectQuery(): query_info.projection \n";
         storage_snapshot->addProjection(query_info.projection->desc);
+    }
 
     /// Blocks used in expression analysis contains size 1 const columns for constant folding and
     ///  null non-const columns to avoid useless memory allocations. However, a valid block sample

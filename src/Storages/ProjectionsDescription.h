@@ -26,6 +26,7 @@ struct ProjectionDescription
     {
         Normal,
         Aggregate,
+        Secondary,
     };
 
     static constexpr const char * MINMAX_COUNT_PROJECTION_NAME = "_minmax_count_projection";
@@ -57,6 +58,8 @@ struct ProjectionDescription
     size_t key_size = 0;
 
     bool is_minmax_count_projection = false;
+
+    bool is_secondary_projection = false;
 
     /// If a primary key expression is used in the minmax_count projection, store the name of max expression.
     String primary_key_max_column_name;
