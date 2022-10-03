@@ -5863,8 +5863,14 @@ std::optional<ProjectionCandidate> MergeTreeData::getQueryProcessingStageWithAgg
     if (!selected_candidate || !selected_candidate->complete) {
         for (const auto & projection : metadata_snapshot->projections) {
             bool is_secondary_projection = (projection.type == ProjectionDescription::Type::Secondary);
-            std::cout << fmt::format("{}:{}, MergeTreeData::{}, name = {}, is_secondary_projection = {}, projection.is_secondary_projection = {} \n",
-                __FILE__, __LINE__, __func__, projection.name, is_secondary_projection, projection.is_secondary_projection);
+            std::cout << fmt::format("{}:{}, MergeTreeData::{}, name = {}\n, is_secondary_projection = {}\n, projection.is_secondary_projection = {} \n",
+                __FILE__, 
+                __LINE__, 
+                __func__, 
+                projection.name,
+                is_secondary_projection,
+                projection.is_secondary_projection);
+            
             add_projection_candidate(projection);
         }
     }

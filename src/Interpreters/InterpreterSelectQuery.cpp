@@ -8,6 +8,7 @@
 #include <Parsers/ASTInterpolateElement.h>
 #include <Parsers/ASTSelectWithUnionQuery.h>
 #include <Parsers/ASTSelectIntersectExceptQuery.h>
+#include <Parsers/ASTSubquery.h>
 #include <Parsers/ASTTablesInSelectQuery.h>
 #include <Parsers/ExpressionListParsers.h>
 #include <Parsers/parseQuery.h>
@@ -346,7 +347,212 @@ InterpreterSelectQuery::InterpreterSelectQuery(
         prepared_sets_)
 {}
 
+void printVerbose2(const ASTPtr& p);
 
+void printASTFunction(const ASTPtr& ptr)
+{
+    std::cout << fmt::format("{}, name = {}\n", __PRETTY_FUNCTION__, ptr->getID());
+
+    auto p = std::dynamic_pointer_cast<const ASTFunction>(ptr);
+    if (p == nullptr) {
+        return;
+    }
+    std::cout << "is_window_function = " << p->is_window_function
+        << ", compute_after_window_functions = " << p->compute_after_window_functions
+        << "\n";
+    if (p->arguments != nullptr)
+    {
+        std::cout << fmt::format("p->arguments = {}\n", p->arguments->getID());
+    } else {
+        std::cout << fmt::format("p->arguments == nullptr\n");
+    }
+    if (p->parameters != nullptr)
+    {
+        std::cout << fmt::format("p->parameters = {}\n", p->parameters->getID());
+    } else {
+        std::cout << fmt::format("p->parameters == nullptr\n");
+    }
+
+    std::cout << "ASTFunction.children.size() = " << p->children.size() << " \n";
+    for (auto& child : p->children) {
+        printVerbose2(child);
+    }
+
+}
+
+void printASTExpressionList(const ASTPtr& ptr) {
+    std::cout << fmt::format("{}, name = {}\n", __PRETTY_FUNCTION__, ptr->getID());
+    auto p = std::dynamic_pointer_cast<const ASTExpressionList>(ptr);
+    if (p == nullptr) {
+        std::cout << fmt::format("{}, name = {}, cast failed\n", __PRETTY_FUNCTION__, ptr->getID());
+        return;
+    }
+
+    std::cout << "separator = " << p->separator <<std::endl;
+
+    std::cout << "ASTExpressionList.children.size() = " << p->children.size() << "\n";
+    for (auto& child : p->children) {
+        printVerbose2(child);
+    }
+}
+
+void printASTIdentifier(const ASTPtr& ptr) {
+    std::cout << fmt::format("\n{}:{}, ::{}\n", __FILE__, __LINE__, __func__);
+    auto p = std::dynamic_pointer_cast<const ASTIdentifier>(ptr);
+    if (p == nullptr) {
+        std::cout << fmt::format("\n{}:{}, ::{} ptr is nullptr\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    /**
+     * String full_name;
+     * std::vector<String> name_parts;
+     * std::shared_ptr<IdentifierSemanticImpl> semantic; /// pimpl
+     */
+
+    // std::cout << "full_name = " << p->name() <<std::endl;
+    p->messiPrint();
+}
+
+void printSubquery(const ASTPtr& ptr) {
+    std::cout << fmt::format("{}, name = {}\n", __PRETTY_FUNCTION__, ptr->getID());
+    auto p = std::dynamic_pointer_cast<const ASTSubquery>(ptr);
+    if (p == nullptr) {
+        return;
+    }
+
+    std::cout << "ASTSubquery.children.size() = " << p->children.size() << "\n";
+    for (auto& child : p->children) {
+        printVerbose2(child);
+    }
+}
+
+void printSelectWithUnionQuery(const ASTPtr& ptr) {
+    std::cout << fmt::format("{}, name = {}\n", __PRETTY_FUNCTION__, ptr->getID());
+    auto p = std::dynamic_pointer_cast<const ASTSelectWithUnionQuery>(ptr);
+    if (p == nullptr) {
+        std::cout << fmt::format("\n{}:{}, ::{} ptr is nullptr\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    std::cout << "list_of_selects.get() = " << p->list_of_selects.get() << "\n";
+    std::cout << "ASTSelectWithUnionQuery.children.size() = " << p->children.size() << "\n";
+
+    for (auto& child : p->children) {
+        std::cout << "child: " << child.get();
+    }
+    std::cout << "\n";
+
+    std::cout << "union_mode = " << static_cast<int>(p->union_mode) << "\n";
+    std::cout << "list_of_modes: size = " << p->list_of_modes.size() << "\n";
+    for (auto& it : p->list_of_modes) {
+        std::cout << "mode: " << static_cast<int>(it);
+    }
+
+    std::cout << std::boolalpha << "is_normalized = " << p->is_normalized << std::endl;
+
+    std::cout << "set_of_modes: size() = " << p->set_of_modes.size() << std::endl;
+    for (auto& item : p->set_of_modes) {
+        std::cout << "item: " << static_cast<int>(item);
+    }
+    
+    if (p->list_of_selects.get() != nullptr) {
+        printVerbose2(p->list_of_selects);
+    }
+}
+
+void printVerbose2(const ASTPtr& p) {
+    const auto& name = p->getID();
+    std::cout << fmt::format("{}, name = {}\n", __PRETTY_FUNCTION__, p->getID());
+
+    if (name.find("Function") != std::string::npos) {
+        printASTFunction(p);
+    }
+
+    if (name.find("ExpressionList") != std::string::npos) {
+        printASTExpressionList(p);
+    }
+
+    if (name.find("Identifier") != std::string::npos) {
+        printASTIdentifier(p);
+    }
+
+    if (name.find("Subquery") != std::string::npos) {
+        printSubquery(p);
+    }
+
+    if (name.find("SelectWithUnionQuery") != std::string::npos) {
+        printSelectWithUnionQuery(p);
+    }
+}
+
+//     /**
+//      * @brief 
+//      * 1. Function_and 
+//      * 2. ExpressionList
+//      * 3. Function_in
+//      * 4. Expression_list 
+//      * 5.1 Identifier_user_id
+//      * 5.2 Subquery
+//      * 6. SelectWithUnionQuery
+//      * 7. ExpressionList
+//      * 8. SelectQuery
+//      * 9.1 ExpressionList
+//      * 9.2 TableInSelectQuery
+//      * 10.1 Identifier_user_id
+//      * 10.2 TableInSelectQueryElement
+//      * 11. TableExpression
+//      * 12. TableIdentifier_video_log
+//      */
+
+// ASTs getIdentifierFromStorageSnapshot(StorageSnapshot* metadata) {
+
+// }
+
+ASTPtr tryRewriteSelectTree(const ASTPtr& query_ptr, StorageSnapshot*) {
+    auto ret = query_ptr->clone();
+    if (ret->children.empty()) {
+        return ret;
+    }
+
+    auto sub_query_impl = ret->clone();
+
+    auto astFuncEqual = ret->children.back()->clone();
+
+    auto astFuncAnd = makeASTFunction("and");
+
+    auto* pfuntionAnd = dynamic_cast<ASTFunction*>(ret->children.back().get());
+    ret->replace<ASTFunction>(pfuntionAnd, astFuncAnd);
+
+    auto* exprListUnderFuncAnd = astFuncAnd->children.back().get();
+
+    auto functionIn = makeASTFunction("in");
+    // auto* pFunctionIn = functionIn
+    ASTFunction* placeHolder;
+
+    exprListUnderFuncAnd->set(placeHolder, functionIn);
+    exprListUnderFuncAnd->set(placeHolder, astFuncEqual);
+
+    auto subquery = std::make_shared<ASTSubquery>();
+
+    auto* expListUnderFuncIn = functionIn->children.back().get();
+
+    std::cout << expListUnderFuncIn << std::endl;
+
+    expListUnderFuncIn->children.push_back(subquery);
+
+    // auto select_with_union_query = std::make_shared<ASTSelectWithUnionQuery>();
+
+    subquery->children.push_back(std::make_shared<ASTSelectWithUnionQuery>());
+
+    // auto& select_with_union_query = subquery->children.back();
+    auto select_with_union_query = std::dynamic_pointer_cast<ASTSelectWithUnionQuery>(subquery->children.back());
+    select_with_union_query->list_of_selects = std::make_shared<ASTExpressionList>();
+    select_with_union_query->children.push_back(select_with_union_query->list_of_selects);
+    select_with_union_query->list_of_selects->children.push_back(sub_query_impl);
+
+    return ret;
+}
 
 bool fakeNeedSecondaryIndexRewrite(const ASTPtr& query_ptr) {
     if (query_ptr->children.size() != 3) {
@@ -366,7 +572,6 @@ bool InterpreterSelectQuery::needSecondaryIndexRewrite(const ASTPtr& query_ptr_)
      */
     return fakeNeedSecondaryIndexRewrite(query_ptr_);
 }
-
 
 int InterpreterSelectQuery::secondaryIndexRewrite(ASTPtr& query_ptr_) {
     if (!needSecondaryIndexRewrite(query_ptr_)) {
@@ -394,40 +599,6 @@ InterpreterSelectQuery::InterpreterSelectQuery(
 {
     checkStackSize();
 
-    static std::mutex muPrint;
-{
-    std::lock_guard lk(muPrint);
-    if (needSecondaryIndexRewrite(query_ptr_)) {
-        std::cout << "needSecondaryIndexRewrite return true \n";
-        WriteBufferFromOwnString dump_before_fuzz;
-        query_ptr_->dumpTree(dump_before_fuzz);
-        std::cout << "dumpTree:\n" << dump_before_fuzz.str() << "\n";
-
-        ASTs vec1;
-        vec1.push_back(query_ptr_);
-        int tier = 0;
-
-        while (!vec1.empty()) {
-            std::cout << " tier " << tier << ", size =  " << vec1.size() << ", ";
-            for (auto& it : vec1) {
-                std::cout << it->getID() << ", ";
-            }
-            ASTs vec2;
-            for (auto& it : vec1) {
-                for (auto& child : it->children) {
-                    vec2.push_back(child);
-                }
-            }
-            vec1 = vec2;
-            
-            ++tier;
-            std::cout << "\n";
-        }
-    }
-
-    // secondaryIndexRewrite(this->query_ptr);
-}
-    
     if (!prepared_sets)
         prepared_sets = std::make_shared<PreparedSets>();
 
@@ -483,6 +654,56 @@ InterpreterSelectQuery::InterpreterSelectQuery(
             metadata_snapshot = storage->getInMemoryMetadataPtr();
 
         storage_snapshot = storage->getStorageSnapshotForQuery(metadata_snapshot, query_ptr, context);
+
+        static std::mutex muPrint;
+        {
+            std::lock_guard lk(muPrint);
+            if (query_ptr_->children.back()->getID() == "Function_and") {
+            // messi
+                printVerbose2(query_ptr_->children.back());
+            }
+            if (needSecondaryIndexRewrite(query_ptr_))
+            {
+                // std::cout << "needSecondaryIndexRewrite return true \n";
+                WriteBufferFromOwnString wbBefore;
+                query_ptr_->dumpTree(wbBefore);
+                std::cout << "messi before rewrite dumpTree:\n" << wbBefore.str() << "\n";
+
+                auto p = tryRewriteSelectTree(query_ptr_, storage_snapshot.get());
+
+                WriteBufferFromOwnString wbAfter;
+                p->dumpTree(wbAfter);
+                std::cout << "messi after rewrite dumpTree:\n" << wbAfter.str() << "\n";
+
+                // WriteBufferFromOwnString dump_before_fuzz;
+                // query_ptr_->dumpTree(dump_before_fuzz);
+                // std::cout << "dumpTree:\n" << dump_before_fuzz.str() << "\n";
+
+
+                // 层序遍历
+                // ASTs vec1;
+                // vec1.push_back(query_ptr_);
+                // int tier = 0;
+                // while (!vec1.empty()) {
+                //     // std::cout << " tier " << tier << ", size =  " << vec1.size() << ", ";
+                //     for (auto& it : vec1) {
+                //         std::cout << it->getID() << ", ";
+                //     }
+                //     ASTs vec2;
+                //     for (auto& it : vec1) {
+                //         for (auto& child : it->children) {
+                //             vec2.push_back(child);
+                //         }
+                //     }
+                //     vec1 = vec2;
+
+                //     ++tier;
+                //     std::cout << "\n";
+                // }
+            }
+
+            // secondaryIndexRewrite(this->query_ptr);
+        }
     }
 
     if (has_input || !joined_tables.resolveTables())

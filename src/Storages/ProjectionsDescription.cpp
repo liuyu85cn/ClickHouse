@@ -106,8 +106,13 @@ ProjectionDescription::getProjectionFromAST(const ASTPtr & definition_ast, const
     result.definition_ast = projection_definition->clone();
     result.name = projection_definition->name;
 
-    result.is_secondary_projection = projection_definition->getSecondaryProjection();
-    result.type = ProjectionDescription::Type::Secondary;
+    // result.is_secondary_projection = projection_definition->getSecondaryProjection();
+    if (projection_definition->getSecondaryProjection()) {
+        std::cout << fmt::format("{}:{}, ProjectionDescription::{}, projection_definition->getSecondaryProjection()\n", __FILE__, __LINE__, __func__);
+        result.is_secondary_projection = true;
+        // result.type = ProjectionDescription::Type::Secondary;
+    }
+    
 
     // static std::mutex muPrint;
     // {
@@ -193,6 +198,11 @@ ProjectionDescription::getProjectionFromAST(const ASTPtr & definition_ast, const
 
     metadata.setColumns(ColumnsDescription(block.getNamesAndTypesList()));
     result.metadata = std::make_shared<StorageInMemoryMetadata>(metadata);
+
+    if (result.is_secondary_projection == true) {
+        result.type = ProjectionDescription::Type::Secondary;
+    }
+
     return result;
 }
 

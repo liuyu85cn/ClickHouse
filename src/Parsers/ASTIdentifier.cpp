@@ -86,6 +86,30 @@ void ASTIdentifier::setShortName(const String & new_name)
     semantic->table = table;
 }
 
+void printIdentifierSemanticImpl(const IdentifierSemanticImpl& id) {
+    std::cout << fmt::format("{}\n", __PRETTY_FUNCTION__);
+    std::cout << std::boolalpha 
+        << "special = " << id.special
+        << ", can_be_alias = " << id.can_be_alias
+        << ", covered = " << id.covered
+        << ", membership " << (id.membership == std::nullopt)
+        << ", table = " << id.table
+        << ", legacy_compound = " << id.legacy_compound;
+}
+
+void ASTIdentifier::messiPrint() const 
+{
+    std::cout << "full_name = " << full_name
+        << ", name_parts.size() = " << name_parts.size();
+    for (auto& np : name_parts) {
+        std::cout << ", " << np;
+    }
+    std::cout << ", is semantic null ? " <<
+        std::boolalpha << (semantic == nullptr) << "\n";
+
+    printIdentifierSemanticImpl(*semantic);
+}
+
 const String & ASTIdentifier::name() const
 {
     if (children.empty())
