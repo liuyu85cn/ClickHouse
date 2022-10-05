@@ -143,6 +143,8 @@ public:
 
     QueryKind getQueryKind() const override { return QueryKind::Select; }
 
+    void messiPrint() const;
+
 protected:
     void formatImpl(const FormatSettings & settings, FormatState & state, FormatStateStacked frame) const override;
 

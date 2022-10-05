@@ -51,6 +51,14 @@ void ASTSelectQuery::updateTreeHashImpl(SipHash & hash_state) const
     IAST::updateTreeHashImpl(hash_state);
 }
 
+void ASTSelectQuery::messiPrint() const {
+    std::cout << "ASTSelectQuery messi print: positions size() = " << positions.size() << "\n";
+    for (auto& p : positions) {
+        std::cout << "key = " << static_cast<int>(p.first) << ", val = " << p.second << "\n";
+    }
+    std::cout << std::endl;
+}
+
 
 void ASTSelectQuery::formatImpl(const FormatSettings & s, FormatState & state, FormatStateStacked frame) const
 {

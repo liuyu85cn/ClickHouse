@@ -394,6 +394,7 @@ void printASTExpressionList(const ASTPtr& ptr) {
     for (auto& child : p->children) {
         printVerbose2(child);
     }
+    std::cout << std::endl;
 }
 
 void printASTIdentifier(const ASTPtr& ptr) {
@@ -516,6 +517,8 @@ ASTPtr tryRewriteSelectTree(const ASTPtr& query_ptr, StorageSnapshot*) {
     }
 
     auto sub_query_impl = ret->clone();
+    auto selectQuery = std::dynamic_pointer_cast<const ASTSelectQuery>(sub_query_impl);
+    selectQuery->messiPrint();
 
     auto astFuncEqual = ret->children.back()->clone();
 
@@ -524,14 +527,13 @@ ASTPtr tryRewriteSelectTree(const ASTPtr& query_ptr, StorageSnapshot*) {
     auto* pfuntionAnd = dynamic_cast<ASTFunction*>(ret->children.back().get());
     ret->replace<ASTFunction>(pfuntionAnd, astFuncAnd);
 
-    auto* exprListUnderFuncAnd = astFuncAnd->children.back().get();
+    auto* expListUnderFuncAnd = astFuncAnd->children.back().get();
 
     auto functionIn = makeASTFunction("in");
-    // auto* pFunctionIn = functionIn
     ASTFunction* placeHolder;
 
-    exprListUnderFuncAnd->set(placeHolder, functionIn);
-    exprListUnderFuncAnd->set(placeHolder, astFuncEqual);
+    expListUnderFuncAnd->set(placeHolder, functionIn);
+    expListUnderFuncAnd->set(placeHolder, astFuncEqual);
 
     auto subquery = std::make_shared<ASTSubquery>();
 
@@ -539,13 +541,17 @@ ASTPtr tryRewriteSelectTree(const ASTPtr& query_ptr, StorageSnapshot*) {
 
     std::cout << expListUnderFuncIn << std::endl;
 
-    expListUnderFuncIn->children.push_back(subquery);
+    std::vector<String> name_parts{"user_id"};
+    auto identifier1 = std::make_shared<ASTIdentifier>(std::move(name_parts));
+    auto identifier2 = identifier1->clone();
 
-    // auto select_with_union_query = std::make_shared<ASTSelectWithUnionQuery>();
+    sub_query_impl->children.front() = identifier2;
+
+    expListUnderFuncIn->children.push_back(identifier1);
+    expListUnderFuncIn->children.push_back(subquery);
 
     subquery->children.push_back(std::make_shared<ASTSelectWithUnionQuery>());
 
-    // auto& select_with_union_query = subquery->children.back();
     auto select_with_union_query = std::dynamic_pointer_cast<ASTSelectWithUnionQuery>(subquery->children.back());
     select_with_union_query->list_of_selects = std::make_shared<ASTExpressionList>();
     select_with_union_query->children.push_back(select_with_union_query->list_of_selects);
@@ -675,10 +681,11 @@ InterpreterSelectQuery::InterpreterSelectQuery(
                 p->dumpTree(wbAfter);
                 std::cout << "messi after rewrite dumpTree:\n" << wbAfter.str() << "\n";
 
+                // query_ptr = p;
+
                 // WriteBufferFromOwnString dump_before_fuzz;
                 // query_ptr_->dumpTree(dump_before_fuzz);
                 // std::cout << "dumpTree:\n" << dump_before_fuzz.str() << "\n";
-
 
                 // 层序遍历
                 // ASTs vec1;

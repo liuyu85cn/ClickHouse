@@ -187,6 +187,10 @@ ProjectionDescription::getProjectionFromAST(const ASTPtr & definition_ast, const
         metadata.primary_key.definition_ast = nullptr;
     }
 
+    if (result.is_secondary_projection == true) {
+        result.type = ProjectionDescription::Type::Secondary;
+    }
+
     auto block = result.sample_block;
     for (const auto & [name, type] : metadata.sorting_key.expression->getRequiredColumnsWithTypes())
         block.insertUnique({nullptr, type, name});
@@ -198,10 +202,6 @@ ProjectionDescription::getProjectionFromAST(const ASTPtr & definition_ast, const
 
     metadata.setColumns(ColumnsDescription(block.getNamesAndTypesList()));
     result.metadata = std::make_shared<StorageInMemoryMetadata>(metadata);
-
-    if (result.is_secondary_projection == true) {
-        result.type = ProjectionDescription::Type::Secondary;
-    }
 
     return result;
 }
